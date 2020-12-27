@@ -31,13 +31,21 @@ ArtItem memory artItem = _artItems[id];
 return (id, artItem.price, artItem.tokenURI);
 }
 
-function purchaseArtItem(uint256 artItemId) external payable artItemExist(artItemId) {
-  ArtItem storage artItem = _artItems[artItemId];
-  require(msg.value >= artItem.price, "Your bid is too low");
-  _safeMint(msg.sender, _tokenIds);
-  _setTokenURI(_tokenIds,artItem.tokenURI);
-  _asyncTransfer(artItem.seller,msg.value);
-}
+function purchaseArtItem(uint256 artItemId)
+        external
+        payable
+        artItemExist(artItemId)
+    {
+        ArtItem storage artItem = _artItems[artItemId];
+
+        require(msg.value >= artItem.price, "Your bid is too low");
+
+        _tokenIds++;
+
+        _safeMint(msg.sender, _tokenIds);
+        _setTokenURI(_tokenIds, artItem.tokenURI);
+        _asyncTransfer(artItem.seller, msg.value);
+    }
 
 function getPayments() external {
     withdrawPayments(msg.sender);

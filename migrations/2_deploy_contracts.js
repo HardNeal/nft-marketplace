@@ -1,5 +1,5 @@
-const DigitalArts = artifacts.require("DigitalArt");
+const DigitalArt = artifacts.require("DigitalArt");
 
 module.exports = function (deployer) {
-  deployer.deploy(DigitalArts);
+  deployer.deploy(DigitalArt);
 };
