@@ -2,9 +2,16 @@ pragma solidity >=0.4.22 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/payment/PullPayment.sol";
+
+/// @title An NFTMarketplace for digital art
+/// @author Kayode Okunlade
+/// @notice This project stores art files on IPFS
+/// @dev Implements the circuit breaker design pattern
 contract DigitalArt is ERC721, PullPayment{
  uint256 public _tokenIds;
  uint256 public _artItemIds;
+ bool private stopped = false;
+address private owner;
  mapping(uint256 => ArtItem) private _artItems;
 
 struct ArtItem {
@@ -13,7 +20,28 @@ struct ArtItem {
  string tokenURI;
  bool exists;
 }
-    constructor() public ERC721("DigitalArt", "ART" ){}
+    constructor() public ERC721("DigitalArt", "ART" ){
+        owner = msg.sender;
+    }
+
+    modifier isOwner() {
+    require(msg.sender == owner, "You are not the owner");    
+    _;
+}
+
+modifier stopInEmergency() {
+    require(stopped, "Work in Progress");    
+    _;
+}
+modifier onlyInEmergency() {
+    require(!stopped, "Emergency function");    
+    _;
+}
+
+/// circuit breaker function
+function circuitBreaker() isOwner public {
+    stopped = !stopped;
+}
 
     modifier artItemExist(uint256 id){
         require(_artItems[id].exists, "Item Not Found" );
@@ -34,6 +62,7 @@ return (id, artItem.price, artItem.tokenURI);
 function purchaseArtItem(uint256 artItemId)
         external
         payable
+        stopInEmergency
         artItemExist(artItemId)
     {
         ArtItem storage artItem = _artItems[artItemId];
@@ -47,7 +76,7 @@ function purchaseArtItem(uint256 artItemId)
         _asyncTransfer(artItem.seller, msg.value);
     }
 
-function getPayments() external {
+function getPayments() external stopInEmergency {
     withdrawPayments(msg.sender);
 }
 }
